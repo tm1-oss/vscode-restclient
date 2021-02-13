@@ -9,6 +9,7 @@ import { HttpClient } from '../utils/httpClient';
 import { RequestState, RequestStatusEntry } from '../utils/requestStatusBarEntry';
 import { RequestVariableCache } from "../utils/requestVariableCache";
 import { Selector } from '../utils/selector';
+import { TestRunner } from '../utils/testRunner';
 import { UserDataManager } from '../utils/userDataManager';
 import { getCurrentTextDocument } from '../utils/workspaceUtility';
 import { HttpResponseTextDocumentView } from '../views/httpResponseTextDocumentView';
@@ -112,6 +113,10 @@ export class RequestController {
                 RequestVariableCache.add(document, httpRequest.name, response);
             }
 
+            // Execute tests
+            const testRunner = new TestRunner(response);
+            const testRunnerResult = testRunner.execute(httpRequest.tests);
+
             try {
                 const activeColumn = window.activeTextEditor!.viewColumn;
                 const previewColumn = settings.previewColumn === ViewColumn.Active
@@ -120,7 +125,7 @@ export class RequestController {
                 if (settings.previewResponseInUntitledDocument) {
                     this._textDocumentView.render(response, previewColumn);
                 } else if (previewColumn) {
-                    this._webview.render(response, previewColumn);
+                    this._webview.render(response, testRunnerResult, previewColumn);
                 }
             } catch (reason) {
                 Logger.error('Unable to preview response:', reason);
