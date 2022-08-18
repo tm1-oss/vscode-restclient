@@ -3,6 +3,9 @@ import { HttpResponse } from '../models/httpResponse';
 import { TestCollector } from './testCollector';
 import { TestRunnerResult } from './testRunnerResult';
 
+const chai = require('chai');
+const chaiSubset = require('chai-subset');
+
 const stackLineRegex = /\(eval.+<anonymous>:(?<line>\d+):(?<column>\d+)\)/;
 
 /**
@@ -16,6 +19,8 @@ export class TestRunner {
         if (!testLines) {
             return TestRunnerResult.noTests();
         }
+
+        chai.use(chaiSubset);
 
         const rc = new TestCollector();
 

@@ -1,6 +1,6 @@
-# REST Client
+# REST Client for TM1 Developers
 
-[![Open in Visual Studio Code](https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc)](https://open.vscode.dev/Huachao/vscode-restclient) [![Node CI](https://github.com/Huachao/vscode-restclient/workflows/Node%20CI/badge.svg?event=push)](https://github.com/Huachao/vscode-restclient/actions?query=workflow%3A%22Node+CI%22) [![Join the chat at https://gitter.im/Huachao/vscode-restclient](https://badges.gitter.im/Huachao/vscode-restclient.svg)](https://gitter.im/Huachao/vscode-restclient?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Marketplace Version](https://vsmarketplacebadge.apphb.com/version-short/humao.rest-client.svg)](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) [![Downloads](https://vsmarketplacebadge.apphb.com/downloads/humao.rest-client.svg)](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) [![Installs](https://vsmarketplacebadge.apphb.com/installs/humao.rest-client.svg)](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) [![Rating](https://vsmarketplacebadge.apphb.com/rating/humao.rest-client.svg)](https://marketplace.visualstudio.com/items?itemName=humao.rest-client)
+[![Open in Visual Studio Code](https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc)](https://open.vscode.dev/tm1-oss/rest-client-tm1-dev) 
 
 REST Client allows you to send HTTP request and view the response in Visual Studio Code directly.
 
@@ -109,7 +109,7 @@ REST Client extension also provides the flexibility that you can send the reques
 Press `F1`, type `ext install` then search for `rest-client`.
 
 ## Making Request
-![rest-client](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/usage.gif)
+![rest-client](https://raw.githubusercontent.com/tm1-oss/vscode-restclient/master/images/usage.gif)
 ### Request Line
 The first non-empty line of the selection (or document if nothing is selected) is the _Request Line_.
 Below are some examples of _Request Line_:
@@ -280,7 +280,7 @@ response =
 };
 ```
 
-The [Chai Assertion Library](https://www.chaijs.com/) provides the [assert](https://www.chaijs.com/api/assert/) and [expect](https://www.chaijs.com/api/bdd/) assertion styles which allow for assertion and BDD style tests.
+The [Chai Assertion Library](https://www.chaijs.com/) provides the [assert](https://www.chaijs.com/api/assert/) and [expect](https://www.chaijs.com/api/bdd/) assertion styles which allow for assertion and BDD style tests. [Chai-subset] (https://www.chaijs.com/plugins/chai-subset/) plugin is also supported.
 
 Example test expecting the HTTP response status code is 200 OK.
 ```JavaScript
@@ -313,6 +313,21 @@ rc.test('text equals hello world', () => {
 
 rc.test('type is cat', () => {
     expect(body.type).to.equal('cat');
+});
+
+rc.test('actual response contains the expected', () => {
+    var expected = {
+        "@odata.context": "$metadata#Processes/$entity",
+        "Name": "some-test",
+        "HasSecurityAccess": false,
+        "Variables": [],
+        "Attributes": {
+            "Caption": "some-test"
+        }
+    }
+
+    const body = JSON.parse(response.body);
+    expect(body).to.containSubset(expected);
 });
 
 ###
@@ -364,12 +379,12 @@ query ($name: String!, $owner: String!) {
 
 {
     "name": "vscode-restclient",
-    "owner": "Huachao"
+    "owner": "tm1-oss"
 }
 ```
 
 ## Making cURL Request
-![cURL Request](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/curl-request.png)
+![cURL Request](https://raw.githubusercontent.com/tm1-oss/vscode-restclient/master/images/curl-request.png)
 We add the capability to directly run [curl request](https://curl.haxx.se/) in REST Client extension. The issuing request command is the same as raw HTTP one. REST Client will automatically parse the request with specified parser.
 
 `REST Client` doesn't fully support all the options of `cURL`, since underneath we use `request` library to send request which doesn't accept all the `cURL` options. Supported options are listed below:
@@ -391,13 +406,13 @@ Once you want to cancel a processing request, click the waiting spin icon or use
 Sometimes you may want to refresh the API response, now you could do it simply using shortcut `Ctrl+Alt+L`(`Cmd+Alt+L` for macOS), or press `F1` and then select/type `Rest Client: Rerun Last Request` to rerun the last request.
 
 ## Request History
-![request-history](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/request-history.png)
+![request-history](https://raw.githubusercontent.com/tm1-oss/vscode-restclient/master/images/request-history.png)
 Each time we sent an http request, the request details(method, url, headers, and body) would be persisted into file. By using shortcut `Ctrl+Alt+H`(`Cmd+Alt+H` for macOS), or press `F1` and then select/type `Rest Client: Request History`, you can view the last __50__ request items(method, url and request time) in the time reversing order, you can select any request you wish to trigger again. After specified request history item is selected, the request details would be displayed in a temp file, you can view the request details or follow previous step to trigger the request again.
 
 You can also clear request history by pressing `F1` and then selecting/typing `Rest Client: Clear Request History`.
 
 ## Save Full Response
-![Save Response](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/response.gif)
+![Save Response](https://raw.githubusercontent.com/tm1-oss/vscode-restclient/master/images/response.gif)
 In the upper right corner of the response preview tab, we add a new icon to save the latest response to local file system. After you click the `Save Full Response` icon, it will prompt the window with the saved response file path. You can click the `Open` button to open the saved response file in current workspace or click `Copy Path` to copy the saved response path to clipboard.
 
 ## Save Response Body
@@ -492,7 +507,7 @@ Authorization: AWS <accessId> <accessKey> [token:<sessionToken>] [region:<region
 ```
 
 ## Generate Code Snippet
-![Generate Code Snippet](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/code-snippet.gif)
+![Generate Code Snippet](https://raw.githubusercontent.com/tm1-oss/vscode-restclient/master/images/code-snippet.gif)
 Once you’ve finalized your request in REST Client extension, you might want to make the same request from your source code. We allow you to generate snippets of code in various languages and libraries that will help you achieve this. Once you prepared a request as previously, use shortcut `Ctrl+Alt+C`(`Cmd+Alt+C` for macOS), or right-click in the editor and then select `Generate Code Snippet` in the menu, or press `F1` and then select/type `Rest Client: Generate Code Snippet`, it will pop up the language pick list, as well as library list. After you selected the code snippet language/library you want, the generated code snippet will be previewed in a separate panel of Visual Studio Code, you can click the `Copy Code Snippet` icon in the tab title to copy it to clipboard.
 
 ## HTTP Language
@@ -503,7 +518,7 @@ Add language support for HTTP request, with features like __syntax highlight__, 
 
 If you want to enable language association in other cases, just change the language mode in the right bottom of `Visual Studio Code` to `HTTP`.
 
-![HTTP Language](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/http.png)
+![HTTP Language](https://raw.githubusercontent.com/tm1-oss/vscode-restclient/master/images/http.png)
 ### Auto Completion
 Currently, auto completion will be enabled for following seven categories:
 
@@ -517,7 +532,7 @@ Currently, auto completion will be enabled for following seven categories:
 
 ### Navigate to Symbols in Request File
 A single `http` file may define lots of requests and file level custom variables, it will be difficult to find the request/variable you want. We leverage from the _Goto Symbol Feature_ of _Visual Studio Code_ to support to navigate(goto) to request/variable with shortcut `Ctrl+Shift+O`(`Cmd+Shift+O` for macOS), or simply press `F1`, type `@`.
-![Goto Symbols](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/navigate.png)
+![Goto Symbols](https://raw.githubusercontent.com/tm1-oss/vscode-restclient/master/images/navigate.png)
 
 ## Environments
 Environments give you the ability to customize requests using variables, and you can easily switch environment without changing requests in `http` file. A common usage is having different configurations for different web service environments, like devbox, sandbox, and production. We also support the __shared__ environment(identified by special environment name _$shared_) to provide a set of variables that are available in all environments. And you can define the same name variable in your specified environment to overwrite the value in shared environment. Currently, active environment's name is displayed at the right bottom of `Visual Studio Code`, when you click it, you can switch environment in the pop-up list. And you can also switch environment using shortcut `Ctrl+Alt+E`(`Cmd+Alt+E` for macOS), or press `F1` and then select/type `Rest Client: Switch Environment`.
@@ -770,7 +785,7 @@ Date: {{$datetime rfc1123}}
     "local_custom_date": "{{$localDatetime 'YYYY-MM-DD'}}"
 }
 ```
-> More details about `aadToken` (Azure Active Directory Token) can be found on [Wiki](https://github.com/Huachao/vscode-restclient/wiki/Azure-Active-Directory-Authentication-Samples)
+> More details about `aadToken` (Azure Active Directory Token) can be found on [Wiki](https://github.com/tm1-oss/vscode-restclient/wiki/Azure-Active-Directory-Authentication-Samples)
 
 ## Customize Response Preview
 REST Client Extension adds the ability to control the font family, size and weight used in the response preview.
@@ -835,7 +850,7 @@ no-cookie-jar | `# @no-cookie-jar` | Don't save cookies in the cookie jar
 See CHANGELOG [here](CHANGELOG.md)
 
 ## Special Thanks
-All the amazing [contributors](https://github.com/Huachao/vscode-restclient/graphs/contributors)❤️
+All the amazing [contributors](https://github.com/tm1-oss/vscode-restclient/graphs/contributors)❤️
 
 ## Feedback
-Please provide feedback through the [GitHub Issue](https://github.com/Huachao/vscode-restclient/issues) system, or fork the repository and submit PR.
+Please provide feedback through the [GitHub Issue](https://github.com/tm1-oss/vscode-restclient/issues) system, or fork the repository and submit PR.
