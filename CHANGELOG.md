@@ -1,3 +1,6 @@
+## 1.0.1 (2022/08/18)
+* __Bug Fix__: [Revert "Fixed multipart/form-data request was not ending with \r\n. (999)"] ([@herrberk](https://github.com/herrberk))
+
 ## 1.0.0 (2022/08/18)
 * __Feature__: [Support for chai based test execution] ([@herrberk](https://github.com/herrberk))
 
