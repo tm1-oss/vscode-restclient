@@ -1,3 +1,6 @@
+## 1.0.0 (2022/08/18)
+* __Feature__: [Support for chai based test execution] ([@herrberk](https://github.com/herrberk))
+
 ## 0.25.0 (2022/06/21)
 * __Feature__: [Support prompt variables](https://github.com/Huachao/vscode-restclient/pull/616) ([@theerapatcha](https://github.com/theerapatcha))
 * __Feature__: Support request level setting for `no-cookie-jar` and `no-redirect-jar`

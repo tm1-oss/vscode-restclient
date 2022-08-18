@@ -1,12 +1,12 @@
 {
-  "name": "rest-client",
-  "displayName": "REST Client",
-  "description": "REST Client for Visual Studio Code",
-  "version": "0.25.0",
-  "publisher": "humao",
+  "name": "rest-client-tm1-dev",
+  "displayName": "REST Client for TM1 Developers",
+  "description": "REST Client for Visual Studio Code for TM1 Developers",
+  "version": "1.0.0",
+  "publisher": "tm1-oss",
   "author": {
-    "name": "Huachao Mao",
-    "email": "huachaomao@gmail.com"
+    "name": "TM1 OSS",
+    "email": "berksoysal@live.com"
   },
   "icon": "images/rest_icon.png",
   "galleryBanner": {
@@ -15,13 +15,13 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Huachao/vscode-restclient/issues",
-    "email": "huachaomao@gmail.com"
+    "url": "https://github.com/tm1-oss/vscode-restclient/issues",
+    "email": "berksoysal@live.com"
   },
-  "homepage": "https://github.com/Huachao/vscode-restclient/blob/master/README.md",
+  "homepage": "https://github.com/tm1-oss/vscode-restclient/blob/master/README.md",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Huachao/vscode-restclient.git"
+    "url": "https://github.com/tm1-oss/vscode-restclient.git"
   },
   "engines": {
     "vscode": "^1.57.0"
@@ -35,6 +35,7 @@
   "keywords": [
     "REST",
     "Http",
+    "TM1",
     "GraphQL",
     "multi-root ready"
   ],
@@ -683,13 +684,14 @@
     "tslint": "^6.1.2",
     "typescript": "^3.7.3",
     "webpack": "^4.26.0",
-    "webpack-cli": "^3.1.0"
+    "webpack-cli": "^3.3.12"
   },
   "dependencies": {
     "adal-node": "^0.1.26",
     "applicationinsights": "^1.0.5",
     "aws4": "^1.9.1",
     "chai": "4.3.0",
+    "chai-subset": "^1.6.0",
     "code-highlight-linenums": "^0.2.1",
     "combined-stream": "^1.0.5",
     "content-disposition": "^0.5.3",
