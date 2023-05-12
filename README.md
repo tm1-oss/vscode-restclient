@@ -339,11 +339,49 @@ An example when all tests have passed.
 
 An example when some tests have failed.
 
-![Passing Tests Example](images/tests-failing.png)
+![Failing Tests Example](images/tests-failing.png)
 
 An example when a `JavaScript` error exists in the code.
 
-![Passing Tests Example](images/tests-excepted.png)
+![Excepted Tests Example](images/tests-excepted.png)
+
+### Custom Test Functions
+
+There are some custom test functions defined to help prevent code duplication.
+
+#### filterObject(obj, arrFilter)
+
+Built-in `filterObject` function allows filtering some unwanted/dynamic fields from your responses/expected values. Here is an example:
+
+```JavaScript
+@tests
+
+rc.test('Response body is correct', () => {
+    var expected = {
+        "@odata.context": "$metadata#Processes/$entity",
+        "@odata.etag": "W/\"fda97ea1c6bff2d8d29e600fe518433f03ea760b\"",
+        "Name": "pCubeCreate",
+        "HasSecurityAccess": false,
+        "PrologProcedure": "\r\nCubeCreate('数据らりるれろxカキàçãÿèГородкиÜ한국어', 'plan_business_unit', 'plan_time');",
+        "MetadataProcedure": "",
+        "DataProcedure": "",
+        "EpilogProcedure": "",
+        "DataSource": {
+            "Type": "None"
+        },
+        "Parameters": [],
+        "Variables": [],
+        "Attributes": {
+            "Caption": "pCubeCreate"
+        }
+    };
+
+    var body = JSON.parse(response.body);
+    expect(filterObject(body,["@odata.etag"])).to.eql(filterObject(expected,["@odata.etag"]));
+});
+
+###
+```
 
 ## Making GraphQL Request
 With [GraphQL](https://www.graphql.com/) support in REST Client extension, you can author and send `GraphQL` query using the request body. Besides that you can also author GraphQL variables in the request body. GraphQL variables part in request body is optional, you also need to add a **blank line** between GraphQL query and variables if you need it.
