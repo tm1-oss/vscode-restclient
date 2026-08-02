@@ -2,7 +2,7 @@
   "name": "rest-client-tm1-dev",
   "displayName": "REST Client for TM1 Developers",
   "description": "REST Client for Visual Studio Code for TM1 Developers",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "tm1-oss",
   "author": {
     "name": "TM1 OSS",
