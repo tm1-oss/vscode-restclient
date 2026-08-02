@@ -725,6 +725,7 @@
     "applicationinsights": "^1.0.5",
     "aws-amplify": "^5.0.3",
     "aws4": "^1.9.1",
+    "chai": "4.3.0",
     "code-highlight-linenums": "^0.2.1",
     "combined-stream": "^1.0.5",
     "content-disposition": "^0.5.3",
