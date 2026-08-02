@@ -21,6 +21,13 @@ export enum RequestMetadata {
      * Used to allow user to interactively input variables for this request
      */
     Prompt = 'prompt',
+
+    /**
+     * Keep retrying the request (with a short delay between attempts) until all
+     * tests pass (or there are no tests and the response is received without error).
+     * The loop respects cancellation — pressing Cancel stops retrying immediately.
+     */
+    AsyncRetry = 'async-retry',
 }
 
 export function fromString(value: string): RequestMetadata | undefined {

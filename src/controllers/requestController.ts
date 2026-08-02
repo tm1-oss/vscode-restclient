@@ -12,6 +12,7 @@ import { RequestVariableCache } from "../utils/requestVariableCache";
 import { Selector } from '../utils/selector';
 import { TestRunner } from '../utils/testRunner';
 import { TestRunnerResult } from '../utils/testRunnerResult';
+import { TestRunnerStates } from '../utils/TestRunnerStates';
 import { UserDataManager } from '../utils/userDataManager';
 import { getCurrentTextDocument } from '../utils/workspaceUtility';
 import { HttpResponseTextDocumentView } from '../views/httpResponseTextDocumentView';
@@ -63,7 +64,8 @@ export class RequestController {
         // parse http request
         const httpRequest = await RequestParserFactory.createRequestParser(text, settings).parseHttpRequest(name);
 
-        await this.runCore(httpRequest, settings, document);
+        const asyncRetry = metadatas.has(RequestMetadata.AsyncRetry);
+        await this.runCore(httpRequest, settings, document, false, asyncRetry);
     }
 
     @trace('Send Till Request')
@@ -99,8 +101,9 @@ export class RequestController {
             const requestSettings = new RequestSettings(metadatas);
             const settings: IRestClientSettings = new RestClientSettings(requestSettings);
 
+            const asyncRetry = metadatas.has(RequestMetadata.AsyncRetry);
             const httpRequest = await RequestParserFactory.createRequestParser(text, settings).parseHttpRequest(name);
-            const result = await this.runCore(httpRequest, settings, document, true, true);
+            const result = await this.runCore(httpRequest, settings, document, true, asyncRetry, true);
 
             // Stop if the request was cancelled
             if (httpRequest.isCancelled) {
@@ -176,7 +179,9 @@ export class RequestController {
         }
     }
 
-    private async runCore(httpRequest: HttpRequest, settings: IRestClientSettings, document?: TextDocument, suppressDisplay?: boolean, suppressStatusUpdate?: boolean): Promise<TestRunnerResult | undefined> {
+    private async runCore(httpRequest: HttpRequest, settings: IRestClientSettings, document?: TextDocument, suppressDisplay?: boolean, asyncRetry?: boolean, suppressStatusUpdate?: boolean): Promise<TestRunnerResult | undefined> {
+        const retryDelayMs = 2000;
+
         // clear status bar
         if (!suppressStatusUpdate) {
             this._requestStatusEntry.update({ state: RequestState.Pending });
@@ -186,70 +191,121 @@ export class RequestController {
         this._lastPendingRequest = httpRequest;
         this._lastRequestSettingTuple = [httpRequest, settings];
 
-        // set http request
+        let attempt = 0;
         try {
-            const response = await this._httpClient.send(httpRequest, settings);
-
-            // check cancel
-            if (httpRequest.isCancelled) {
-                return undefined;
-            }
-
-            this._requestStatusEntry.update({ state: RequestState.Received, response });
-
-            if (httpRequest.name && document) {
-                RequestVariableCache.add(document, httpRequest.name, response);
-            }
-
-            // Execute tests
-            const testRunner = new TestRunner(response);
-            const testRunnerResult = testRunner.execute(httpRequest.tests);
-
-            if (!suppressDisplay) {
+            while (true) {
+                attempt++;
+                // On retries, reset status to Pending while the next request is in flight
+                if (attempt > 1 && !suppressStatusUpdate) {
+                    this._requestStatusEntry.update({ state: RequestState.Pending });
+                }
+                // set http request
                 try {
-                    const activeColumn = window.activeTextEditor!.viewColumn;
-                    const previewColumn = settings.previewColumn === ViewColumn.Active
-                        ? activeColumn
-                        : ((activeColumn as number) + 1) as ViewColumn;
-                    if (settings.previewResponseInUntitledDocument) {
-                        this._textDocumentView.render(response, previewColumn);
-                    } else if (previewColumn) {
-                        this._webview.render(response, testRunnerResult, previewColumn);
+                    const response = await this._httpClient.send(httpRequest, settings);
+
+                    // check cancel
+                    if (httpRequest.isCancelled) {
+                        return undefined;
                     }
-                } catch (reason) {
-                    Logger.error('Unable to preview response:', reason);
-                    window.showErrorMessage(reason instanceof Error ? reason.message : String(reason));
+
+                    if (!suppressStatusUpdate) {
+                        this._requestStatusEntry.update({ state: RequestState.Received, response });
+                    }
+
+                    if (httpRequest.name && document) {
+                        RequestVariableCache.add(document, httpRequest.name, response);
+                    }
+
+                    // Execute tests
+                    const testRunner = new TestRunner(response);
+                    const testRunnerResult = testRunner.execute(httpRequest.tests);
+
+                    // When async-retry is active, keep looping until all tests pass
+                    if (asyncRetry && !this.testRunnerResultSucceeded(testRunnerResult)) {
+                        Logger.warn(`async-retry: attempt ${attempt} did not succeed, retrying in ${retryDelayMs}ms…`);
+                        if (!suppressStatusUpdate) {
+                            this._requestStatusEntry.update({ state: RequestState.AsyncWaiting });
+                        }
+                        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+                        if (httpRequest.isCancelled) {
+                            return undefined;
+                        }
+                        continue;
+                    }
+
+                    if (!suppressDisplay) {
+                        try {
+                            const activeColumn = window.activeTextEditor!.viewColumn;
+                            const previewColumn = settings.previewColumn === ViewColumn.Active
+                                ? activeColumn
+                                : ((activeColumn as number) + 1) as ViewColumn;
+                            if (settings.previewResponseInUntitledDocument) {
+                                this._textDocumentView.render(response, previewColumn);
+                            } else if (previewColumn) {
+                                this._webview.render(response, testRunnerResult, previewColumn);
+                            }
+                        } catch (reason) {
+                            Logger.error('Unable to preview response:', reason);
+                            window.showErrorMessage(reason instanceof Error ? reason.message : String(reason));
+                        }
+                    }
+
+                    // persist to history json file
+                    await UserDataManager.addToRequestHistory(HistoricalHttpRequest.convertFromHttpRequest(httpRequest));
+
+                    return testRunnerResult;
+                } catch (error) {
+                    // check cancel
+                    if (httpRequest.isCancelled) {
+                        return;
+                    }
+
+                    const err = error instanceof Error ? error : new Error(String(error));
+                    const errWithCode = err as NodeJS.ErrnoException;
+                    if (errWithCode.code === 'ETIMEDOUT') {
+                        err.message = `Request timed out. Double-check your network connection and/or raise the timeout duration (currently set to ${settings.timeoutInMilliseconds}ms) as needed: 'rest-client.timeoutinmilliseconds'. Details: ${err}.`;
+                    } else if (errWithCode.code === 'ECONNREFUSED') {
+                        err.message = `The connection was rejected. Either the requested service isn't running on the requested server/port, the proxy settings in vscode are misconfigured, or a firewall is blocking requests. Details: ${err}.`;
+                    } else if (errWithCode.code === 'ENETUNREACH') {
+                        err.message = `You don't seem to be connected to a network. Details: ${err}`;
+                    }
+
+                    if (asyncRetry) {
+                        Logger.warn(`async-retry: attempt ${attempt} failed (${err.message}), retrying in ${retryDelayMs}ms…`);
+                        if (!suppressStatusUpdate) {
+                            this._requestStatusEntry.update({ state: RequestState.AsyncWaiting });
+                        }
+                        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+                        if (httpRequest.isCancelled) {
+                            return undefined;
+                        }
+                        continue;
+                    }
+
+                    if (!suppressStatusUpdate) {
+                        this._requestStatusEntry.update({ state: RequestState.Error });
+                    }
+                    Logger.error('Failed to send request:', err);
+                    window.showErrorMessage(err.message);
+                    return undefined;
                 }
             }
-
-            // persist to history json file
-            await UserDataManager.addToRequestHistory(HistoricalHttpRequest.convertFromHttpRequest(httpRequest));
-
-            return testRunnerResult;
-        } catch (error) {
-            // check cancel
-            if (httpRequest.isCancelled) {
-                return;
-            }
-
-            const err = error instanceof Error ? error : new Error(String(error));
-            const errWithCode = err as NodeJS.ErrnoException;
-            if (errWithCode.code === 'ETIMEDOUT') {
-                err.message = `Request timed out. Double-check your network connection and/or raise the timeout duration (currently set to ${settings.timeoutInMilliseconds}ms) as needed: 'rest-client.timeoutinmilliseconds'. Details: ${err}.`;
-            } else if (errWithCode.code === 'ECONNREFUSED') {
-                err.message = `The connection was rejected. Either the requested service isn't running on the requested server/port, the proxy settings in vscode are misconfigured, or a firewall is blocking requests. Details: ${err}.`;
-            } else if (errWithCode.code === 'ENETUNREACH') {
-                err.message = `You don't seem to be connected to a network. Details: ${err}`;
-            }
-            this._requestStatusEntry.update({ state: RequestState.Error });
-            Logger.error('Failed to send request:', err);
-            window.showErrorMessage(err.message);
-            return undefined;
         } finally {
             if (this._lastPendingRequest === httpRequest) {
                 this._lastPendingRequest = undefined;
             }
         }
+    }
+
+    /**
+     * Returns true if the test runner result is considered a success:
+     * no tests defined, or all defined tests passed.
+     */
+    private testRunnerResultSucceeded(result: TestRunnerResult): boolean {
+        if (result.status === TestRunnerStates.Excepted) {
+            return false;
+        }
+        return result.tests.tests.every(t => t.passed);
     }
 
     public dispose() {

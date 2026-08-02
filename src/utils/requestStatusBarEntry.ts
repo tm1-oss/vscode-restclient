@@ -5,7 +5,7 @@ import { HttpResponse } from '../models/httpResponse';
 const filesize = require('filesize');
 
 type NonReceivedRequestStatus = {
-    state: RequestState.Closed | RequestState.Cancelled | RequestState.Error | RequestState.Pending
+    state: RequestState.Closed | RequestState.Cancelled | RequestState.Error | RequestState.Pending | RequestState.AsyncWaiting
 };
 
 type ReceivedRequestStatus = {
@@ -23,6 +23,7 @@ type RequestStatus = ReceivedRequestStatus | NonReceivedRequestStatus | ElapsedR
 export enum RequestState {
     Closed,
     Pending,
+    AsyncWaiting,
     Received,
     Cancelled,
     Error,
@@ -57,6 +58,10 @@ export class RequestStatusEntry {
 
             case RequestState.Pending:
                 this.showDurationEntry('$(sync~spin) Waiting...', 'Click to cancel', 'rest-client.cancel-request');
+                break;
+
+            case RequestState.AsyncWaiting:
+                this.showDurationEntry('$(sync~spin) Waiting for async...', 'Click to cancel', 'rest-client.cancel-request');
                 break;
 
             case RequestState.Cancelled:
