@@ -1,3 +1,6 @@
+## 1.0.4 (2026/01/27)
+* __Bug Fix__: [Fix relative path handling in async URLs] ([@arun-k-sabu](https://github.com/arun-k-sabu))
+
 ## 1.0.3 (2024/10/15)
 * __Improvement__: [Improve chai-subset containSubset function for arrays] ([@herrberk](https://github.com/herrberk))
 
