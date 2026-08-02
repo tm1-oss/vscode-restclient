@@ -235,7 +235,7 @@ export class HttpResponseWebview extends BaseWebview {
         }
     }
 
-    private getHtmlForWebview(panel: WebviewPanel, response: HttpResponse, testRunnerResult: TestRunnerResult): string {
+    private getHtmlForWebview(panel: WebviewPanel, response: HttpResponse, testRunnerResult?: TestRunnerResult): string {
         let innerHtml: string;
         let width = 2;
         let contentType = response.contentType;
@@ -248,7 +248,9 @@ export class HttpResponseWebview extends BaseWebview {
             const code = this.highlightResponse(response);
             width = (code.split(/\r\n|\r|\n/).length + 1).toString().length;
             innerHtml = `<pre><code>${this.addLineNums(code)}</code></pre>`;
-            innerHtml += this.renderTestRunnerResult(testRunnerResult);
+            if (testRunnerResult !== undefined) {
+                innerHtml += this.renderTestRunnerResult(testRunnerResult);
+            }
         }
 
         // Content Security Policy

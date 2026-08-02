@@ -1,3 +1,6 @@
+## 1.0.2 (2023/05/12)
+* __Feature__: [Support a custom function called filterObject in tests] ([@herrberk](https://github.com/herrberk))
+
 ## 1.0.1 (2022/08/18)
 * __Bug Fix__: [Revert "Fixed multipart/form-data request was not ending with \r\n. (999)"] ([@herrberk](https://github.com/herrberk))
 

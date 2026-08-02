@@ -8,6 +8,19 @@ const chaiSubset = require('chai-subset');
 
 const stackLineRegex = /\(eval.+<anonymous>:(?<line>\d+):(?<column>\d+)\)/;
 
+// filterObject function allows filtering specific fields from a given object.
+export function filterObject(obj: Record<string, any>, ignoredVals: string[]): Record<string, any> {
+    for (const i in obj) {
+        if (ignoredVals.includes(i)) {
+            delete obj[i];
+        }
+        else if (typeof obj[i] === "object" && obj[i] !== null) {
+            obj[i] = filterObject(obj[i], ignoredVals);
+        }
+    }
+    return obj;
+}
+
 /**
  * Runs tests against an HttpResponse and returns a TestRunnerResult describing the outcome.
  */
@@ -31,6 +44,7 @@ export class TestRunner {
                 "expect",
                 "assert",
                 "rc",
+                "filterObject",
                 testLines);
 
             testFunction(
@@ -52,7 +66,8 @@ export class TestRunner {
                 },
                 expect,
                 assert,
-                rc);
+                rc,
+                filterObject);
         } catch (error) {
             let errorLine = '';
             if (error.stack) {
