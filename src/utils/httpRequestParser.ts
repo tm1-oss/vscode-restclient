@@ -1,6 +1,7 @@
 import * as fs from 'fs-extra';
 import { EOL } from 'os';
 import { Stream } from 'stream';
+import { URL } from 'url';
 import { IRestClientSettings } from '../models/configurationSettings';
 import { FormParamEncodingStrategy } from '../models/formParamEncodingStrategy';
 import { HttpRequest } from '../models/httpRequest';
@@ -179,7 +180,40 @@ export class HttpRequestParser implements RequestParser {
             url = url.substr(0, match.index);
         }
 
+        // Normalize URLs that contain relative path segments (../ or ./) within the path
+        // This handles cases where a Location header with relative path is appended to a URL
+        // e.g., "https://api.example.com/path/to/resource/../../../_async('xyz')"
+        // becomes "https://api.example.com/_async('xyz')"
+        url = this.normalizeUrlPath(url);
+
         return { method, url };
+    }
+
+    private normalizeUrlPath(url: string): string {
+        try {
+            // Check if URL contains relative path segments
+            if (!url.includes('../') && !url.includes('/./')) {
+                return url;
+            }
+
+            const urlObj = new URL(url);
+            const pathSegments = urlObj.pathname.split('/').filter(s => s.length > 0);
+            const normalizedSegments: string[] = [];
+
+            for (const segment of pathSegments) {
+                if (segment === '..') {
+                    normalizedSegments.pop();
+                } else if (segment !== '.') {
+                    normalizedSegments.push(segment);
+                }
+            }
+            // Reconstruct the URL
+            urlObj.pathname = '/' + normalizedSegments.join('/');
+            return urlObj.toString();
+        } catch (error) {
+            // If URL parsing fails, return the original URL
+            return url;
+        }
     }
 
     private async parseBody(lines: string[], contentTypeHeader: string | undefined): Promise<string | Stream | undefined> {
