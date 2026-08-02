@@ -4,7 +4,7 @@ import { TestCollector } from './testCollector';
 import { TestRunnerResult } from './testRunnerResult';
 
 const chai = require('chai');
-const chaiSubset = require('chai-subset');
+const chaiSubset = require('@tm1-oss/chai-subset');
 
 const stackLineRegex = /\(eval.+<anonymous>:(?<line>\d+):(?<column>\d+)\)/;
 

@@ -1,3 +1,6 @@
+## 1.0.3 (2024/10/15)
+* __Improvement__: [Improve chai-subset containSubset function for arrays] ([@herrberk](https://github.com/herrberk))
+
 ## 1.0.2 (2023/05/12)
 * __Feature__: [Support a custom function called filterObject in tests] ([@herrberk](https://github.com/herrberk))
 
