@@ -1,3 +1,6 @@
+## 1.0.0 (2022/08/18)
+* __Feature__: [Support for chai based test execution] ([@herrberk](https://github.com/herrberk))
+
 ## 0.25.1 (2022/07/06)
 * __Bug Fix__: [Fix request parse error for curl request without body](https://github.com/Huachao/vscode-restclient/issues/1026)
 
