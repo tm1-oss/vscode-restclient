@@ -263,6 +263,7 @@ export class HttpResponseWebview extends BaseWebview {
         <link rel="stylesheet" type="text/css" href="${panel.webview.asWebviewUri(this.vscodeStyleFilePath)}">
         <link rel="stylesheet" type="text/css" href="${panel.webview.asWebviewUri(this.customStyleFilePath)}">
         ${this.getSettingsOverrideStyles(width)}
+        ${this.getTestResultStyles()}
         ${csp}
         <script nonce="${nonce}">
             document.addEventListener('DOMContentLoaded', function () {
@@ -282,16 +283,114 @@ export class HttpResponseWebview extends BaseWebview {
     </body>`;
     }
 
-    private renderTestRunnerResult(result: TestRunnerResult): string {
+    public renderAllTestResults(entries: Array<{ label: string; line: number; result: TestRunnerResult }>, column: ViewColumn) {
+        // Filter to only entries that actually have tests
+        const withTests = entries.filter(e => e.result.status !== TestRunnerStates.NoTests);
+        if (withTests.length === 0) {
+            return;
+        }
+
+        let panel: WebviewPanel;
+        if (this.settings.showResponseInDifferentTab || this.panels.length === 0) {
+            panel = window.createWebviewPanel(
+                this.viewType,
+                'Test Results',
+                { viewColumn: column, preserveFocus: !this.settings.previewResponsePanelTakeFocus },
+                {
+                    enableFindWidget: true,
+                    enableScripts: true,
+                    retainContextWhenHidden: true
+                });
+
+            panel.onDidDispose(() => {
+                if (panel === this.activePanel) {
+                    this.setPreviewActiveContext(false);
+                    this.activePanel = undefined;
+                }
+                const index = this.panels.findIndex(v => v === panel);
+                if (index !== -1) {
+                    this.panels.splice(index, 1);
+                    this.panelResponses.delete(panel);
+                }
+                if (this.panels.length === 0) {
+                    this._onDidCloseAllWebviewPanels.fire();
+                }
+            });
+
+            panel.iconPath = this.iconFilePath;
+
+            panel.onDidChangeViewState(({ webviewPanel }) => {
+                const active = this.panels.some(p => p.active);
+                this.setPreviewActiveContext(active);
+                this.activePanel = webviewPanel.active ? webviewPanel : undefined;
+            });
+
+            this.panels.push(panel);
+        } else {
+            panel = this.panels[this.panels.length - 1];
+            panel.title = 'Test Results';
+        }
+
+        const nonce = new Date().getTime() + '' + new Date().getMilliseconds();
+        const csp = this.getCsp(nonce);
+
+        let totalPassed = 0;
+        let totalFailed = 0;
+        for (const entry of withTests) {
+            if (entry.result.status === TestRunnerStates.Excepted) {
+                totalFailed++;
+            } else {
+                const tests = entry.result.tests.tests;
+                totalPassed += tests.filter(t => t.passed).length;
+                totalFailed += tests.filter(t => !t.passed).length;
+            }
+        }
+        const summaryClass = totalFailed > 0 ? 'failed' : 'passed';
+        const summary = `<div class="test-results test-results-${summaryClass} test-results-summary">
+            <h1>Test Results &mdash; <span class="status">${totalPassed} Passed, ${totalFailed} Failed</span></h1>
+        </div>`;
+
+        let body = '';
+        for (let i = 0; i < withTests.length; i++) {
+            const entry = withTests[i];
+            body += this.renderTestRunnerResult(entry.result, entry.label, i + 1, entry.line);
+        }
+
+        panel.webview.html = `
+    <head>
+        <link rel="stylesheet" type="text/css" href="${panel.webview.asWebviewUri(this.baseFilePath)}">
+        <link rel="stylesheet" type="text/css" href="${panel.webview.asWebviewUri(this.vscodeStyleFilePath)}">
+        <link rel="stylesheet" type="text/css" href="${panel.webview.asWebviewUri(this.customStyleFilePath)}">
+        ${this.getTestResultStyles()}
+        ${csp}
+    </head>
+    <body>
+        <div>
+            ${summary}
+            ${body}
+        </div>
+    </body>`;
+
+        this.setPreviewActiveContext(this.settings.previewResponsePanelTakeFocus);
+        panel.reveal(column, !this.settings.previewResponsePanelTakeFocus);
+        this.activePanel = panel;
+    }
+
+    private renderTestRunnerResult(result: TestRunnerResult, label?: string, index?: number, line?: number): string {
         let code = '';
 
         if (!result || result.status === TestRunnerStates.NoTests) {
             return code;
         }
 
+        const serial = index !== undefined ? `${index}.` : '';
+        const lineSuffix = line !== undefined ? ` (line ${line})` : '';
+        const name = label || `Request${lineSuffix}`;
+        const heading = `<em>${serial} ${name}${label ? lineSuffix : ''}</em>`;
+
         if (result.status === TestRunnerStates.Excepted) {
             return `<div class="test-results test-results-excepted">
-                <h1>Test Results: <span class="status">Failed to Excecute</span></h1>
+                <h1>${heading}: <span class="status">Failed to Execute</span></h1>
                 <p>${result.error?.name}: ${result.error?.message} (${result.error?.line})</p>
                 </div>`;
         }
@@ -309,7 +408,7 @@ export class HttpResponseWebview extends BaseWebview {
         const statusTitle = passed ? "Passed" : "Failed";
 
         code += `<div class="test-results test-results-${statusClass}">\n`;
-        code += `<h1>Test Results: <span class="status">${statusTitle}</span></h1>\n`;
+        code += `<h1>${heading}: <span class="status">${statusTitle}</span></h1>\n`;
 
         code += `<ul>\n`;
         if (passes.length > 0) {
@@ -383,6 +482,32 @@ ${formatHeaders(response.headers)}`;
         return code;
     }
 
+    private getTestResultStyles(): string {
+        return `<style>
+            .test-results.test-results-passed .status {
+                color: green;
+            }
+            .test-results.test-results-failed .status {
+                color: red;
+            }
+            .test-results.test-results-excepted .status, .test-results.test-results-excepted .message {
+                color: orange;
+            }
+            .test-results .passed-summary {
+                color: green;
+            }
+            .test-results .failed-summary {
+                color: red;
+            }
+            .tests .test.test-passed {
+                color: green;
+            }
+            .tests .test.test-failed {
+                color: red;
+            }
+        </style>`;
+    }
+
     private getSettingsOverrideStyles(width: number): string {
         return [
             '<style>',
@@ -406,27 +531,6 @@ ${formatHeaders(response.headers)}`;
             '.line.collapsed .icon {',
             `left: calc(${width}ch + 3px)`,
             '}',
-            `.test-results.test-results-passed .status {
-                color: green;
-            }
-            .test-results.test-results-failed .status {
-                color: red;
-            }
-            .test-results.test-results-excepted .status, .test-results.test-results-excepted .message {
-                color: orange;
-            }
-            .test-results .passed-summary {
-                color: green;
-            }
-            .test-results .failed-summary {
-                color: red;
-            }
-            .tests .test.test-passed {
-                color: green;
-            }
-            .tests .test.test-failed {
-                color: red;
-            }`,
             '</style>'].join('\n');
     }
 
@@ -434,17 +538,17 @@ ${formatHeaders(response.headers)}`;
         return `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' http: https: data: vscode-resource:; script-src 'nonce-${nonce}'; style-src 'self' 'unsafe-inline' http: https: data: vscode-resource:;">`;
     }
 
-    private addLineNums(code): string {
+    private addLineNums(code: string): string {
         code = code.replace(/([\r\n]\s*)(<\/span>)/ig, '$2$1');
 
         code = this.cleanLineBreaks(code);
 
-        code = code.split(/\r\n|\r|\n/);
-        const max = (1 + code.length).toString().length;
+        const lines = code.split(/\r\n|\r|\n/);
+        const max = (1 + lines.length).toString().length;
 
-        const foldingRanges = this.getFoldingRange(code);
+        const foldingRanges = this.getFoldingRange(lines);
 
-        code = code
+        return lines
             .map(function (line, i) {
                 const lineNum = i + 1;
                 const range = foldingRanges.has(lineNum)
@@ -454,7 +558,6 @@ ${formatHeaders(response.headers)}`;
                 return `<span class="line width-${max}" start="${lineNum}"${range}>${line}${folding}</span>`;
             })
             .join('\n');
-        return code;
     }
 
     private cleanLineBreaks(code: string): string {

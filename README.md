@@ -6,6 +6,7 @@ REST Client allows you to send HTTP request and view the response in Visual Stud
 
 ## Main Features
 * Send/Cancel/Rerun __HTTP request__ in editor and view response in a separate pane with syntax highlight
+* Send __all requests up to and including a given request__ in a single action, with aggregated test results
 * Send __GraphQL query__ and author __GraphQL variables__ in editor
 * Send __cURL command__ in editor and copy HTTP request as `cURL command`
 * Auto save and view/clear request history
@@ -77,6 +78,45 @@ content-type: application/json
 }
 ```
 To send a prepared request, you have several options. The easiest way is to click the `Send Request` link above the request. This link will appear automatically if the file's language mode is set to `HTTP`. You can also use the shortcut `Ctrl+Alt+R`(`Cmd+Alt+R` for macOS), right-click in the editor and select `Send Request` from the context menu, or press `F1` and select/type `Rest Client: Send Request`.
+
+### Send Till Request
+
+**Send Till Request** lets you execute every request in the file from the top up to and including the request at the current cursor position — all in a single action.
+
+To use it, place your cursor anywhere inside the request you want to be the _last_ one to run, then choose one of:
+
+* Click the **`Send Till Request`** CodeLens link that appears above the request.
+* Right-click in the editor and select **`Send Till Request`** from the context menu.
+* Press `F1` and select/type `Rest Client: Send Till Request`.
+
+Each request in the sequence is sent in order. If a request is cancelled mid-sequence, execution stops immediately. After all requests complete, a **Test Results** panel opens showing the aggregated pass/fail results for every request that had tests defined. Requests without any tests are silently skipped in the summary.
+
+This is especially useful for scenarios where later requests depend on state set up by earlier ones (e.g., authentication tokens stored via request variables), and you want to verify the entire chain in one go.
+
+```http
+# @name login
+POST https://example.com/auth/login HTTP/1.1
+Content-Type: application/json
+
+{ "username": "admin", "password": "{{password}}" }
+
+###
+
+# @name getProfile
+GET https://example.com/profile HTTP/1.1
+Authorization: Bearer {{login.response.body.token}}
+
+###
+
+# @name updateProfile
+PATCH https://example.com/profile HTTP/1.1
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "displayName": "Admin User" }
+```
+
+Clicking **`Send Till Request`** on the `updateProfile` block will send `login`, `getProfile`, and `updateProfile` in sequence and display the combined test results.
 
 The response will be previewed in a separate webview panel inside Visual Studio Code. If you prefer to use the full power of searching, selecting, or manipulating in Visual Studio Code, you can preview the response in an untitled document by setting `rest-client.previewResponseInUntitledDocument` to `true`.
 

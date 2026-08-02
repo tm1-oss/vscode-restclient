@@ -13,7 +13,12 @@ type ReceivedRequestStatus = {
     response: HttpResponse
 };
 
-type RequestStatus = ReceivedRequestStatus | NonReceivedRequestStatus;
+type ElapsedRequestStatus = {
+    state: RequestState.Elapsed,
+    totalMs: number
+};
+
+type RequestStatus = ReceivedRequestStatus | NonReceivedRequestStatus | ElapsedRequestStatus;
 
 export enum RequestState {
     Closed,
@@ -21,6 +26,7 @@ export enum RequestState {
     Received,
     Cancelled,
     Error,
+    Elapsed,
 }
 
 export class RequestStatusEntry {
@@ -55,6 +61,10 @@ export class RequestStatusEntry {
 
             case RequestState.Cancelled:
                 this.showDurationEntry('$(circle-slash) Cancelled');
+                break;
+
+            case RequestState.Elapsed:
+                this.showDurationEntry(`$(clock) ${status.totalMs}ms`);
                 break;
 
             case RequestState.Received:

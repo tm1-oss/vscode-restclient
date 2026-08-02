@@ -80,6 +80,11 @@
         "category": "Rest Client"
       },
       {
+        "command": "rest-client.request-till",
+        "title": "Send Till Request",
+        "category": "Rest Client"
+      },
+      {
         "command": "rest-client.rerun-last-request",
         "title": "Rerun Last Request",
         "category": "Rest Client"
@@ -270,14 +275,19 @@
           "group": "rest-client@1"
         },
         {
-          "command": "rest-client.generate-codesnippet",
+          "command": "rest-client.request-till",
           "when": "editorTextFocus && editorLangId == http",
           "group": "rest-client@2"
         },
         {
-          "command": "rest-client.copy-request-as-curl",
+          "command": "rest-client.generate-codesnippet",
           "when": "editorTextFocus && editorLangId == http",
           "group": "rest-client@3"
+        },
+        {
+          "command": "rest-client.copy-request-as-curl",
+          "when": "editorTextFocus && editorLangId == http",
+          "group": "rest-client@4"
         }
       ]
     },

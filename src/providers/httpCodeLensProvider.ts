@@ -8,14 +8,22 @@ export class HttpCodeLensProvider implements CodeLensProvider {
         const lines: string[] = document.getText().split(Constants.LineSplitterRegex);
         const requestRanges: [number, number][] = Selector.getRequestRanges(lines);
 
-        for (const [blockStart, blockEnd] of requestRanges) {
+        for (let i = 0; i < requestRanges.length; i++) {
+            const [blockStart, blockEnd] = requestRanges[i];
             const range = new Range(blockStart, 0, blockEnd, 0);
-            const cmd: Command = {
+            const sendCmd: Command = {
                 arguments: [document, range],
                 title: 'Send Request',
                 command: 'rest-client.request'
             };
-            blocks.push(new CodeLens(range, cmd));
+            blocks.push(new CodeLens(range, sendCmd));
+
+            const sendTillCmd: Command = {
+                arguments: [document, range],
+                title: 'Send Till Request',
+                command: 'rest-client.request-till'
+            };
+            blocks.push(new CodeLens(range, sendTillCmd));
         }
 
         return Promise.resolve(blocks);
