@@ -1,3 +1,7 @@
+## 1.0.5 (2026/09/13)
+* __Feature__: [Support for running multiple requests till a given request in single click] ([@5reep4thy](https://github.com/5reep4thy))
+* __Feature__: [Support for async-retry] ([@5reep4thy](https://github.com/5reep4thy))
+
 ## 1.0.4 (2026/01/27)
 * __Bug Fix__: [Fix relative path handling in async URLs] ([@arun-k-sabu](https://github.com/arun-k-sabu))
 
