@@ -7,6 +7,7 @@ import { getContentType, getHeader, isJSONString } from './misc';
 const xpath = require('xpath');
 const { DOMParser } = require('xmldom');
 const { JSONPath } = require('jsonpath-plus');
+const JSONBig = require('json-bigint')({ storeAsString: true });
 
 const requestVariablePathRegex: RegExp = /^(\w+)(?:\.(request|response)(?:\.(body|headers)(?:\.(.*))?)?)?$/;
 
@@ -72,7 +73,7 @@ export class RequestVariableCacheValueProcessor {
             const contentTypeHeader = getContentType(headers);
             if (MimeUtility.isJSON(contentTypeHeader) ||
                 (forceJson || MimeUtility.isJavaScript(contentTypeHeader)) && isJSONString(body as string)) {
-                const parsedBody = JSON.parse(body as string);
+                const parsedBody = JSONBig.parse(body as string);
 
                 return this.resolveJsonHttpBody(parsedBody, nameOrPath);
             } else if (forceXml || MimeUtility.isXml(contentTypeHeader)) {
