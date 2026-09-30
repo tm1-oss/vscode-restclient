@@ -1,3 +1,6 @@
+## 1.0.6 (2026/09/30)
+* __Bug Fix__: [Preserve int64 precision when extracting JSON response body variables] ([@herrberk](https://github.com/herrberk))
+
 ## 1.0.5 (2026/09/13)
 * __Feature__: [Support for running multiple requests till a given request in single click] ([@5reep4thy](https://github.com/5reep4thy))
 * __Feature__: [Support for async-retry] ([@5reep4thy](https://github.com/5reep4thy))
