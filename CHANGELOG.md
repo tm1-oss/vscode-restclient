@@ -1,3 +1,6 @@
+## 1.0.7 (2026/10/26)
+* __Bug Fix__: [Fixed OIDC scope issue and improved regex] ([@herrberk](https://github.com/herrberk))
+
 ## 1.0.6 (2026/09/30)
 * __Bug Fix__: [Preserve int64 precision when extracting JSON response body variables] ([@herrberk](https://github.com/herrberk))
 
